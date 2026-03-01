@@ -3,30 +3,63 @@ import { wsService } from '../../core/websocket';
 import { useAppStore } from '../../store';
 
 export const useRealtimeUpdates = () => {
-  const { updateQueueItem, updateAppointment, updateDoctor, setAnalytics } = useAppStore();
+  const { 
+    upsertQueueItem, 
+    upsertAppointment, 
+    upsertDoctor, 
+    setAnalytics, 
+    removeFromQueue 
+  } = useAppStore();
 
   useEffect(() => {
-    wsService.on('queue:update', (data) => {
-      updateQueueItem(data.id, data);
-    });
+    const handleQueueUpdate = (event) => {
+      if (event.type === 'update' || event.type === 'create') {
+        upsertQueueItem(event.data);
+      } else if (event.type === 'delete') {
+        removeFromQueue(event.data.id || event.data._id);
+      }
+    };
 
-    wsService.on('appointment:update', (data) => {
-      updateAppointment(data.id, data);
-    });
+    const handleAppointmentUpdate = (event) => {
+      if (event.type === 'update' || event.type === 'create') {
+        upsertAppointment(event.data);
+      }
+    };
 
-    wsService.on('doctor:update', (data) => {
-      updateDoctor(data.id, data);
-    });
+    const handleDoctorUpdate = (event) => {
+      if (event.type === 'update') {
+        upsertDoctor(event.data);
+      }
+    };
 
-    wsService.on('analytics:update', (data) => {
-      setAnalytics(data);
-    });
+    const handleAnalyticsUpdate = (event) => {
+      setAnalytics(event.data);
+    };
+
+    const handleQueueRecalculated = async () => {
+      // Full resync on queue recalculation
+      try {
+        const { api } = await import('../services/api');
+        const queue = await api.getQueue();
+        const { setQueue } = useAppStore.getState();
+        setQueue(queue);
+      } catch (error) {
+        console.error('Queue resync failed:', error);
+      }
+    };
+
+    wsService.on('queue:update', handleQueueUpdate);
+    wsService.on('appointment:update', handleAppointmentUpdate);
+    wsService.on('doctor:update', handleDoctorUpdate);
+    wsService.on('analytics:update', handleAnalyticsUpdate);
+    wsService.on('queue:recalculated', handleQueueRecalculated);
 
     return () => {
       wsService.off('queue:update');
       wsService.off('appointment:update');
       wsService.off('doctor:update');
       wsService.off('analytics:update');
+      wsService.off('queue:recalculated');
     };
-  }, [updateQueueItem, updateAppointment, updateDoctor, setAnalytics]);
+  }, [upsertQueueItem, upsertAppointment, upsertDoctor, setAnalytics, removeFromQueue]);
 };

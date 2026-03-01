@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { UserIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import { useAppStore } from '../../store';
-import { wsService } from '../../core/websocket';
 import { api } from '../../shared/services/api';
 
 export const Login = () => {
@@ -11,20 +10,26 @@ export const Login = () => {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('patient');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const { setAuth } = useAppStore();
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
     
     try {
       const data = await api.login({ email, password, role });
       setAuth(data.user, data.token);
-      wsService.connect(data.token);
-      navigate('/');
+      
+      const redirectPath = data.user.role === 'patient' ? '/' : 
+                          data.user.role === 'doctor' ? '/doctor' : '/admin';
+      navigate(redirectPath);
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -101,9 +106,10 @@ export const Login = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               type="submit"
-              className="w-full btn-primary py-3"
+              disabled={loading}
+              className="w-full btn-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Sign In
+              {loading ? 'Signing in...' : 'Sign In'}
             </motion.button>
 
             {error && (

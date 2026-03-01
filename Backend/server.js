@@ -20,6 +20,9 @@ initializeSocket(server);
 app.use('/api/auth', require('./src/routes/auth'));
 app.use('/api/appointments', require('./src/routes/appointments'));
 app.use('/api/users', require('./src/routes/users'));
+app.use('/api/queue', require('./src/routes/queue'));
+app.use('/api/analytics', require('./src/routes/analytics'));
+app.use('/api/triage', require('./src/routes/triage'));
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date() });

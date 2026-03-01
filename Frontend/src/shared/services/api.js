@@ -68,6 +68,18 @@ class ApiService {
       method: 'DELETE',
     });
   }
+
+  getQueue() {
+    return this.request('/api/queue');
+  }
+
+  getDoctors() {
+    return this.request('/api/users/doctors');
+  }
+
+  getAnalytics() {
+    return this.request('/api/analytics');
+  }
 }
 
 export const api = new ApiService();

@@ -9,7 +9,7 @@ import { useAppStore } from '../../store';
 import { formatTime, calculateWaitTime, formatDateTime } from '../../shared/utils';
 
 export const PatientDashboard = () => {
-  const { user, appointments, queue } = useAppStore();
+  const { user, appointments = [], queue = [] } = useAppStore();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -17,9 +17,18 @@ export const PatientDashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const myAppointment = appointments.find((apt) => apt.patientId === user?.id && apt.status !== 'completed');
-  const queuePosition = queue.findIndex((item) => item.patientId === user?.id) + 1;
-  const estimatedWait = calculateWaitTime(queuePosition);
+  const myAppointment = appointments.find((apt) => 
+    (apt.patientId === user?.id || apt.patientId === user?._id) && 
+    apt.status !== 'completed' && 
+    apt.status !== 'cancelled'
+  );
+  
+  const myQueueItem = queue.find((item) => 
+    item.patientId === user?.id || item.patientId === user?._id
+  );
+  
+  const queuePosition = myQueueItem?.queuePosition || 0;
+  const estimatedWait = myQueueItem?.waitTime || calculateWaitTime(queuePosition);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

@@ -3,7 +3,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAppStore } from './store';
 import { useThemeStore } from './core/theme';
 import { useRealtimeUpdates } from './shared/hooks/useRealtimeUpdates';
+import { useDataBootstrap } from './shared/hooks/useDataBootstrap';
 import { Header } from './shared/components/Header';
+import { Loading } from './shared/components/Loading';
 import { Login } from './features/auth/Login';
 import { Register } from './features/auth/Register';
 import { ProtectedRoute } from './features/auth/ProtectedRoute';
@@ -12,10 +14,12 @@ import { DoctorDashboard } from './features/doctor/DoctorDashboard';
 import { AdminDashboard } from './features/admin/AdminDashboard';
 
 const DashboardRouter = () => {
-  const { user } = useAppStore();
+  const { user, isLoading, isInitialized } = useAppStore();
+  const { isInitialized: bootstrapped } = useDataBootstrap();
   useRealtimeUpdates();
 
   if (!user) return <Navigate to="/login" replace />;
+  if (isLoading || !bootstrapped) return <Loading />;
 
   return (
     <>

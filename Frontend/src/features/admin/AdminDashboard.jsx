@@ -15,12 +15,12 @@ const SEVERITY_COLORS = {
 };
 
 export const AdminDashboard = () => {
-  const { queue, appointments, doctors, analytics } = useAppStore();
+  const { queue = [], appointments = [], doctors = [], analytics } = useAppStore();
 
   const activeQueue = queue.length;
   const totalAppointments = appointments.length;
   const activeDoctors = doctors.filter((d) => d.status === 'active').length;
-  const avgWaitTime = analytics?.avgWaitTime || 25;
+  const avgWaitTime = analytics?.avgWaitTime || 0;
 
   const severityData = [
     { name: 'Critical', value: queue.filter((q) => q.severity === 'critical').length },
@@ -29,14 +29,7 @@ export const AdminDashboard = () => {
     { name: 'Low', value: queue.filter((q) => q.severity === 'low').length },
   ];
 
-  const waitTimeData = analytics?.waitTimeHistory || [
-    { time: '9:00', wait: 15 },
-    { time: '10:00', wait: 22 },
-    { time: '11:00', wait: 18 },
-    { time: '12:00', wait: 25 },
-    { time: '13:00', wait: 20 },
-    { time: '14:00', wait: 28 },
-  ];
+  const waitTimeData = analytics?.waitTimeHistory || [];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -127,14 +120,16 @@ export const AdminDashboard = () => {
         <h3 className="text-lg font-semibold mb-4">Doctor Workload</h3>
         <div className="space-y-4">
           {doctors.map((doctor) => {
-            const workload = queue.filter((q) => q.doctorId === doctor.id).length;
+            const workload = queue.filter((q) => 
+              q.doctorId === doctor.id || q.doctorId === doctor._id
+            ).length;
             const maxWorkload = 10;
             const percentage = (workload / maxWorkload) * 100;
             const color = percentage > 80 ? 'bg-red-600' : percentage > 50 ? 'bg-orange-600' : 'bg-green-600';
 
             return (
               <motion.div
-                key={doctor.id}
+                key={doctor._id || doctor.id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="flex items-center space-x-4"

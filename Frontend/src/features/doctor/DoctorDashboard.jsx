@@ -1,22 +1,45 @@
 import { motion } from 'framer-motion';
-import { UserIcon, ClockIcon, CheckCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { UserIcon, ClockIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { Card } from '../../shared/components/Card';
 import { Badge } from '../../shared/components/Badge';
 import { StatCard } from '../../shared/components/StatCard';
 import { useAppStore } from '../../store';
+import { api } from '../../shared/services/api';
 import { formatTime, severityConfig } from '../../shared/utils';
 
 export const DoctorDashboard = () => {
-  const { user, queue, appointments } = useAppStore();
+  const { user, queue = [], appointments = [] } = useAppStore();
 
-  const myQueue = queue.filter((item) => item.doctorId === user?.id);
-  const myAppointments = appointments.filter((apt) => apt.doctorId === user?.id);
+  const myQueue = queue.filter((item) => 
+    item.doctorId === user?.id || item.doctorId === user?._id
+  );
+  
+  const myAppointments = appointments.filter((apt) => 
+    apt.doctorId === user?.id || apt.doctorId === user?._id
+  );
+  
   const activeAppointment = myAppointments.find((apt) => apt.status === 'in_consultation');
   const completedToday = myAppointments.filter((apt) => apt.status === 'completed').length;
 
   const sortedQueue = [...myQueue].sort((a, b) => {
     return severityConfig[a.severity].priority - severityConfig[b.severity].priority;
   });
+
+  const handleStart = async (appointmentId) => {
+    try {
+      await api.updateAppointment(appointmentId, { status: 'in_consultation' });
+    } catch (error) {
+      console.error('Failed to start appointment:', error);
+    }
+  };
+
+  const handleComplete = async (appointmentId) => {
+    try {
+      await api.updateAppointment(appointmentId, { status: 'completed' });
+    } catch (error) {
+      console.error('Failed to complete appointment:', error);
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -70,6 +93,7 @@ export const DoctorDashboard = () => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => handleComplete(activeAppointment._id || activeAppointment.id)}
               className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium"
             >
               Complete
@@ -118,6 +142,7 @@ export const DoctorDashboard = () => {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
+                    onClick={() => handleStart(patient._id || patient.id)}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
                   >
                     Start
